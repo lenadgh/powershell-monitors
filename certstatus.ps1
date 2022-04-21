@@ -29,18 +29,23 @@ foreach ($URL in $URLList){
 $certstatus = @()
 
 foreach ($HTTPSsite in $HTTPSsites) {
-    [Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-    $req = $null
-    $req = [Net.HttpWebRequest]::Create($httpssite) 
-    $req.Timeout = '3600'
-    $req.AllowAutoRedirect = $false
-    $req.GetResponse() | Out-Null
-    [datetime]$expiration = [System.DateTime]::Parse($req.ServicePoint.Certificate.GetExpirationDateString())
-    $output = [PSCustomObject]@{
-        'site' = $httpssite
-        'Cert End Date' = $expiration
-        'Expires in' = ($expiration - $(get-date)).Days
-        }
-    $certstatus += $output
+[Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+$req = $null
+$req = [Net.HttpWebRequest]::Create($httpssite) 
+$req.Timeout = '3600'
+$req.AllowAutoRedirect = $false
+try{
+$req.GetResponse() | Out-Null
+[datetime]$expiration = [System.DateTime]::Parse($req.ServicePoint.Certificate.GetExpirationDateString())
+$output = [PSCustomObject]@{
+   'site' = $httpssite
+   'Cert End Date' = $expiration
+   'Expires in' = ($expiration - $(get-date)).Days
+}
+$certstatus += $output
+}
+catch{
+"cannot connect to $httpssite"
+}
 }
 $certstatus
